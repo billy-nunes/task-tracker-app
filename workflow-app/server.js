@@ -1,121 +1,174 @@
 // Imports
-require('dotenv').config()
-const mongoose = require('mongoose')
-const express = require('express')
-const bcrypt = require('bcryptjs')
-const cors = require('cors')
-const passport = require('passport')
-const session = require('express-session')
-const User = require('./models/user')
-const Task = require('./models/task')
+require("dotenv").config();
+const mongoose = require("mongoose");
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const cors = require("cors");
+const passport = require("passport");
+const session = require("express-session");
+const User = require("./models/user");
+const Task = require("./models/task");
 
-const app = express()
-mongoose.set('strictQuery', true)
+const app = express();
+mongoose.set("strictQuery", true);
 
-const { MONGODB_URI, SESSION_SECRET, CLIENT_URL = 'http://localhost:3000', SERVER_PORT = 4000 } = process.env
+const {
+  MONGODB_URI,
+  SESSION_SECRET,
+  CLIENT_URL = "http://localhost:3000",
+  SERVER_PORT = 4000,
+} = process.env;
 if (!MONGODB_URI || !SESSION_SECRET) {
-  console.error('Missing MONGODB_URI or SESSION_SECRET — copy .env.example to .env and fill it in.')
-  process.exit(1)
+  console.error(
+    "Missing MONGODB_URI or SESSION_SECRET — copy .env.example to .env and fill it in.",
+  );
+  process.exit(1);
 }
 
 // Database
 mongoose
   .connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
+  .then(() => console.log("MongoDB connected"))
   .catch((err) => {
-    console.error('MongoDB connection failed:', err.message)
-    process.exit(1)
-  })
+    console.error("MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
 
 // Middleware
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(cors({ origin: CLIENT_URL, credentials: true }))
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax' },
-}))
-app.use(passport.initialize())
-app.use(passport.session())
-require('./passportConfig')(passport)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, sameSite: "lax" },
+  }),
+);
+app.use(passport.initialize());
+app.use(passport.session());
+require("./passportConfig")(passport);
 
 // Blocks the request unless the user is logged in
 const requireLogin = (req, res, next) => {
-  if (!req.user) return res.status(401).json({ message: 'Not logged in' })
-  next()
-}
+  if (!req.user) return res.status(401).json({ message: "Not logged in" });
+  next();
+};
 
 // Routes
-app.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user) => {
-    if (err) return next(err)
-    if (!user) return res.status(401).json({ message: 'Invalid username or password' })
+app.post("/login", (req, res, next) => {
+  passport.authenticate("local", (err, user) => {
+    if (err) return next(err);
+    if (!user)
+      return res.status(401).json({ message: "Invalid username or password" });
     req.logIn(user, (err) => {
-      if (err) return next(err)
-      res.json({ username: user.username })
-    })
-  })(req, res, next)
-})
+      if (err) return next(err);
+      res.json({ username: user.username });
+    });
+  })(req, res, next);
+});
 
-app.post('/register', async (req, res, next) => {
+app.post("/register", async (req, res, next) => {
   try {
-    const { username, password } = req.body
+    const { username, password } = req.body;
     if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required' })
+      return res
+        .status(400)
+        .json({ message: "Username and password are required" });
     }
     if (await User.findOne({ username })) {
-      return res.status(409).json({ message: 'User already exists' })
+      return res.status(409).json({ message: "User already exists" });
     }
-    const hashedPassword = await bcrypt.hash(password, 10)
-    await new User({ username, password: hashedPassword }).save()
-    res.status(201).json({ message: 'User created' })
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await new User({ username, password: hashedPassword }).save();
+    res.status(201).json({ message: "User created" });
   } catch (err) {
-    next(err)
+    next(err);
   }
-})
+});
 
-app.post('/logout', (req, res, next) => {
+app.post("/logout", (req, res, next) => {
   req.logout((err) => {
-    if (err) return next(err)
-    res.json({ message: 'Logged out' })
-  })
-})
+    if (err) return next(err);
+    res.json({ message: "Logged out" });
+  });
+});
 
 // Returns the logged-in user, or 401 if not logged in
-app.get('/user', (req, res) => {
-  if (!req.user) return res.status(401).json({ message: 'Not logged in' })
-  res.json(req.user)
-})
+app.get("/user", (req, res) => {
+  if (!req.user) return res.status(401).json({ message: "Not logged in" });
+  res.json(req.user);
+});
 
 // List the logged-in user's tasks, newest first
-app.get('/tasks', requireLogin, async (req, res, next) => {
+app.get("/tasks", requireLogin, async (req, res, next) => {
   try {
-    const tasks = await Task.find({ owner: req.user.id }).sort({ createdAt: -1 })
-    res.json(tasks)
+    const tasks = await Task.find({ owner: req.user.id }).sort({
+      createdAt: -1,
+    });
+    res.json(tasks);
   } catch (err) {
+    next(err);
+  }
+});
+
+// Create a task for the logged-in user
+app.post("/tasks", requireLogin, async (req, res, next) => {
+  try {
+    const { title, description, dueDate } = req.body;
+    const task = await Task.create({
+      title,
+      description,
+      dueDate,
+      owner: req.user.id,
+    });
+    res.status(201).json(task);
+  } catch (err) {
+    if (err.name === "ValidationError")
+      return res.status(400).json({ message: err.message });
+    next(err);
+  }
+});
+
+// Update one of the logged-in user's tasks
+app.patch('/tasks/:id', requireLogin, async (req, res, next) => {
+  try {
+    const { title, description, status, dueDate } = req.body
+    const task = await Task.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user.id },
+      { title, description, status, dueDate },
+      { new: true, runValidators: true, omitUndefined: true }
+    )
+    if (!task) return res.status(404).json({ message: 'Task not found' })
+    res.json(task)
+  } catch (err) {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return res.status(400).json({ message: err.message })
+    }
     next(err)
   }
 })
 
-// Create a task for the logged-in user
-app.post('/tasks', requireLogin, async (req, res, next) => {
+// Delete one of the logged-in user's tasks
+app.delete('/tasks/:id', requireLogin, async (req, res, next) => {
   try {
-    const { title, description, dueDate } = req.body
-    const task = await Task.create({ title, description, dueDate, owner: req.user.id })
-    res.status(201).json(task)
+    const task = await Task.findOneAndDelete({ _id: req.params.id, owner: req.user.id })
+    if (!task) return res.status(404).json({ message: 'Task not found' })
+    res.json({ message: 'Task deleted' })
   } catch (err) {
-    if (err.name === 'ValidationError') return res.status(400).json({ message: err.message })
+    if (err.name === 'CastError') return res.status(400).json({ message: 'Invalid task ID' })
     next(err)
   }
 })
 
 // Error handler — stops the server crashing on a thrown error
 app.use((err, req, res, next) => {
-  console.error(err)
-  res.status(500).json({ message: 'Server error' })
-})
+  console.error(err);
+  res.status(500).json({ message: "Server error" });
+});
 
 // Server
-app.listen(SERVER_PORT, () => console.log(`Server started on port ${SERVER_PORT}`))
+app.listen(SERVER_PORT, () =>
+  console.log(`Server started on port ${SERVER_PORT}`),
+);
