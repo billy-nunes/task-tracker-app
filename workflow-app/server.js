@@ -7,6 +7,7 @@ const cors = require('cors')
 const passport = require('passport')
 const session = require('express-session')
 const User = require('./models/user')
+const Task = require('./models/task')
 
 const app = express()
 mongoose.set('strictQuery', true)
@@ -39,6 +40,12 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 require('./passportConfig')(passport)
+
+// Blocks the request unless the user is logged in
+const requireLogin = (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: 'Not logged in' })
+  next()
+}
 
 // Routes
 app.post('/login', (req, res, next) => {
