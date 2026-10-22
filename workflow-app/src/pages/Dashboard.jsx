@@ -13,6 +13,7 @@ const statusColours = {
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [filter, setFilter] = useState("All");
   const navigate = useNavigate();
 
   // Check who's logged in, then load their tasks
@@ -45,6 +46,12 @@ const Dashboard = () => {
     setTasks(tasks.filter((t) => t._id !== id));
   };
 
+  
+
+  // Tasks to display, based on the selected filter
+  const visibleTasks =
+    filter === "All" ? tasks : tasks.filter((t) => t.status === filter);
+
   if (!user) return <p className="text-center mt-4">Loading…</p>;
 
   return (
@@ -58,11 +65,27 @@ const Dashboard = () => {
 
       <AddTask onAdded={(task) => setTasks([task, ...tasks])} />
 
+      <div className="btn-group mt-3">
+        {["All", ...Object.keys(statusColours)].map((s) => (
+          <button
+            key={s}
+            className={`btn btn-sm ${filter === s ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setFilter(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
       {tasks.length === 0 ? (
-        <p className="mt-3">No tasks yet.</p>
+        <p className="mt-3">
+          {filter === "All"
+            ? "No tasks yet."
+            : `No tasks with status "${filter}".`}
+        </p>
       ) : (
         <ul className="list-group mt-3">
-          {tasks.map((task) => (
+          {visibleTasks.map((task) => (
             <li
               key={task._id}
               className="list-group-item d-flex justify-content-between align-items-center"
