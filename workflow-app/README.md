@@ -29,16 +29,21 @@ npm test
 
 ## API
 
-| Method | Route | Description |
-|---|---|---|
-| POST | `/register` | Create a user `{ username, password }` |
-| POST | `/login` | Log in, sets a session cookie |
-| POST | `/logout` | End the session |
-| GET | `/user` | Current user, or 401 if not logged in |
+| Method | Route        | Description                                           |
+| ------ | ------------ | ----------------------------------------------------- |
+| POST   | `/register`  | Create a user `{ username, password }`                |
+| POST   | `/login`     | Log in, sets a session cookie                         |
+| POST   | `/logout`    | End the session                                       |
+| GET    | `/user`      | Current user, or 401 if not logged in                 |
+| GET    | `/tasks`     | List your tasks (newest first)                        |
+| POST   | `/tasks`     | Create a task `{ title, description?, dueDate? }`     |
+| PATCH  | `/tasks/:id` | Update a task's title, description, status or dueDate |
+| DELETE | `/tasks/:id` | Delete a task                                         |
 
 ## Roadmap
-- [ ] Task model: title, description, status, due date, owner, timestamps
-- [ ] Create / list / update / delete task API routes (logged-in users only)
+
+- [x] Task model: title, description, status, due date, owner, timestamps
+- [x] Create / list / update / delete task API routes (logged-in users only)
 - [ ] Dashboard: task list with status filter
 - [ ] To-do checklist items within a task
 - [ ] File uploads attached to a task
