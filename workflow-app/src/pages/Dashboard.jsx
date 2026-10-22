@@ -32,6 +32,19 @@ const Dashboard = () => {
     navigate("/login");
   };
 
+  // Change a task's status, then swap the updated task into the list
+  const changeStatus = async (id, status) => {
+    const res = await api.patch(`/tasks/${id}`, { status });
+    setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
+  };
+
+  // Delete a task, then remove it from the list
+  const deleteTask = async (id) => {
+    if (!window.confirm("Delete this task?")) return;
+    await api.delete(`/tasks/${id}`);
+    setTasks(tasks.filter((t) => t._id !== id));
+  };
+
   if (!user) return <p className="text-center mt-4">Loading…</p>;
 
   return (
@@ -60,9 +73,26 @@ const Dashboard = () => {
                   <div className="small text-muted">{task.description}</div>
                 )}
               </div>
-              <span className={`badge ${statusColours[task.status]}`}>
-                {task.status}
-              </span>
+              <div className="d-flex align-items-center gap-2">
+                <span className={`badge ${statusColours[task.status]}`}>
+                  {task.status}
+                </span>
+                <select
+                  className="form-select form-select-sm w-auto"
+                  value={task.status}
+                  onChange={(e) => changeStatus(task._id, e.target.value)}
+                >
+                  {Object.keys(statusColours).map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => deleteTask(task._id)}
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
         </ul>
