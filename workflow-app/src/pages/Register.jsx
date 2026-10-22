@@ -1,49 +1,50 @@
-import {useState} from 'react'
-import axios from "axios";
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import api from '../api'
 
-const Register = (props) => {
-    const [registerUsername, setRegisterUsername] = useState("");
-    const [registerPassword, setRegisterPassword] = useState("");
+const Register = () => {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
 
-    const register = () => {
-        axios({
-          method: "POST",
-          data: {
-            username: registerUsername,
-            password: registerPassword,
-          },
-          withCredentials: true,
-          url: "http://localhost:4000/register",
-        }).then((res) => console.log(res));
-      };
+  const register = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      await api.post('/register', { username, password })
+      navigate('/login')
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed')
+    }
+  }
 
-    return (
-            <div className='mn-vh=100 d-flex justify-content-center'>
-                <div className="card text-white mb-3" style={{width: '45%'}}>
-                    <h3 className='card-header text-center mb-3'>Register</h3>
-                    <div className='card-body'>
-                        <form>
-                            <fieldset>
-                                    <div className="form-group">
-                                        <label htmlFor="exampleInputEmail1" className="form-label mt-4">Username</label>
-                                            <input type="text" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter username" onChange={e => setRegisterUsername(e.target.value)}/>
-                                    </div>
-                                        
-                                    <div className="form-group">
-                                        <label htmlFor="exampleInputPassword1" className="form-label mt-4">Password</label>
-                                            <input type="password" className="form-control" id="exampleInputPassword1" placeholder="Password" onChange={e => setRegisterPassword(e.target.value)}/>
-                                    </div>
-                                    
-                                    <div className="d-grid gap-2">
-                                        <button type="button"  class="btn btn-lg btn-primary" onClick={register} style={{marginTop: '1rem'}}>Submit</button>
-                                        <button type="button"  class="btn btn-link" onClick={() => props.onFormSwitch('login')}>Already have an account? Login</button>
-                                    </div>
-                            </fieldset>  
-                        </form>
-                    </div>    
-                </div>
+  return (
+    <div className="d-flex justify-content-center">
+      <div className="card text-white mb-3" style={{ width: '45%', minWidth: 300 }}>
+        <h3 className="card-header text-center mb-3">Register</h3>
+        <div className="card-body">
+          <form onSubmit={register}>
+            <div className="form-group">
+              <label htmlFor="register-username" className="form-label mt-4">Username</label>
+              <input type="text" className="form-control" id="register-username" placeholder="Enter username"
+                value={username} onChange={(e) => setUsername(e.target.value)} required />
             </div>
-    )
+            <div className="form-group">
+              <label htmlFor="register-password" className="form-label mt-4">Password</label>
+              <input type="password" className="form-control" id="register-password" placeholder="Password"
+                value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            {error && <div className="alert alert-danger mt-3">{error}</div>}
+            <div className="d-grid gap-2">
+              <button type="submit" className="btn btn-lg btn-primary" style={{ marginTop: '1rem' }}>Submit</button>
+              <Link to="/login" className="btn btn-link">Already have an account? Login</Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default Register
