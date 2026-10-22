@@ -11,7 +11,7 @@ const User = require('./models/user')
 const app = express()
 mongoose.set('strictQuery', true)
 
-const { MONGODB_URI, SESSION_SECRET, CLIENT_URL = 'http://localhost:3000', PORT = 4000 } = process.env
+const { MONGODB_URI, SESSION_SECRET, CLIENT_URL = 'http://localhost:3000', SERVER_PORT = 4000 } = process.env
 if (!MONGODB_URI || !SESSION_SECRET) {
   console.error('Missing MONGODB_URI or SESSION_SECRET — copy .env.example to .env and fill it in.')
   process.exit(1)
@@ -89,4 +89,4 @@ app.use((err, req, res, next) => {
 })
 
 // Server
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+app.listen(SERVER_PORT, () => console.log(`Server started on port ${SERVER_PORT}`))
