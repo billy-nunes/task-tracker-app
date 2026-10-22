@@ -89,6 +89,28 @@ app.get('/user', (req, res) => {
   res.json(req.user)
 })
 
+// List the logged-in user's tasks, newest first
+app.get('/tasks', requireLogin, async (req, res, next) => {
+  try {
+    const tasks = await Task.find({ owner: req.user.id }).sort({ createdAt: -1 })
+    res.json(tasks)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// Create a task for the logged-in user
+app.post('/tasks', requireLogin, async (req, res, next) => {
+  try {
+    const { title, description, dueDate } = req.body
+    const task = await Task.create({ title, description, dueDate, owner: req.user.id })
+    res.status(201).json(task)
+  } catch (err) {
+    if (err.name === 'ValidationError') return res.status(400).json({ message: err.message })
+    next(err)
+  }
+})
+
 // Error handler — stops the server crashing on a thrown error
 app.use((err, req, res, next) => {
   console.error(err)
