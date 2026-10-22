@@ -23,7 +23,7 @@ const AddTask = ({ onAdded }) => {
     } catch (err) {
       setError(err.response?.data?.message || "Could not add task");
     }
-
+  };
     return (
       <form onSubmit={addTask} className="card card-body mt-3">
         <div className="row g-2">
@@ -61,7 +61,6 @@ const AddTask = ({ onAdded }) => {
         {error && <div className="alert alert-danger mt-2 mb-0">{error}</div>}
       </form>
     );
-  };
 };
 
 export default AddTask;
